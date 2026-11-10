@@ -63,3 +63,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 /* Destination card actions remain readable when a guide and planner link share a row */
 .card-bottom{gap:12px;flex-wrap:wrap}
 .card-bottom a{white-space:nowrap}
+
+/* Search and filter controls */
+.catalog-search-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:720px;margin:10px 0 16px}
+.catalog-search-controls input{flex:1 1 280px;min-width:0;width:100%;padding:13px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:3px}
+.catalog-search-controls input:focus-visible{outline:3px solid #9cb16e;outline-offset:2px;border-color:var(--green)}
+.filter-reset{border:1px solid var(--line);background:var(--paper);color:var(--green);padding:11px 14px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer}
+.filter-reset:hover,.filter-reset:focus-visible{background:var(--green);color:white;border-color:var(--green)}
+.filter-chip[aria-pressed="true"]{background:var(--green);color:white;border-color:var(--green)}
+.catalog-empty-state[hidden],.industry-empty-state[hidden]{display:none}
+@media(max-width:560px){.catalog-search-controls{align-items:stretch}.catalog-search-controls input{flex-basis:100%}.filter-reset{width:100%}.filter-bar{gap:7px}.filter-chip{padding:9px 11px}}
