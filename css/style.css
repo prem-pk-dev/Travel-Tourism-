@@ -50,3 +50,7 @@
 
 /* Named travel-software directory cards */
 .vendor-grid .vendor-card{display:flex;flex-direction:column;align-items:flex-start;min-height:100%}.vendor-provider{font-size:12px;font-weight:700;letter-spacing:.02em;margin:0 0 10px}.vendor-verify{font-size:11px;opacity:.75;margin-top:auto;padding-top:12px}.vendor-link{display:inline-flex;align-items:center;margin-top:12px;font-size:12px;font-weight:700;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:4px}.vendor-link:focus-visible{outline:2px solid currentColor;outline-offset:4px}.vendor-pending{border-style:dashed}
+
+
+/* Global keyboard focus visibility */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
