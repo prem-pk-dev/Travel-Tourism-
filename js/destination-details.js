@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('destination-summary').textContent='This guide link is missing or unavailable. Return to the destination collection and select a destination to continue.';
   $('destination-highlights').innerHTML='<article class="info-card"><h3>Browse destinations</h3><p>Explore the current Wanderly destination collection.</p><a class="vendor-link" href="destinations.html">View destinations ↗</a></article>';
   ['destination-overview','destination-good-to-know'].forEach(id=>$(id).textContent='Select a destination from the discovery page to view its guide.');
+  renderCards('destination-seasons',[['Choose a place','Open a destination guide to see seasonal planning notes.']]);
+  renderList('destination-itinerary',['Select a destination to view a suggested sample route.']);
+  renderCards('destination-access',[['Plan your arrival','Compare available air, rail and road options for your selected destination.']]);
+  renderCards('destination-notes',[['Check current guidance','Verify local weather, access, safety and entry requirements before travel.']]);
   return;
  }
  const title=place.name+' Destination Guide — Wanderly Travel Collective';
