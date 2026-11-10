@@ -2,16 +2,76 @@ document.addEventListener('DOMContentLoaded',()=>{
  const toggle=document.querySelector('.menu-toggle'),nav=document.querySelector('.nav');
  if(toggle&&nav){toggle.addEventListener('click',()=>{const open=nav.classList.toggle('open');toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'Close navigation':'Open navigation');toggle.textContent=open?'×':'☰'});nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Open navigation');toggle.textContent='☰'}))}
  document.querySelectorAll('[data-year]').forEach(el=>el.textContent=new Date().getFullYear());
- const filterButtons=[...document.querySelectorAll('[data-filter]')],cards=[...document.querySelectorAll('[data-category]')];
- let selectedFilter='all';
- const applyCatalogFilters=()=>{const term=(document.querySelector('#catalog-search')?.value||'').trim().toLowerCase();let count=0;cards.forEach(card=>{const categoryMatch=selectedFilter==='all'||(card.dataset.category||'').split('|').includes(selectedFilter);const searchText=(card.dataset.searchable||card.textContent||'').toLowerCase();const searchMatch=!term||searchText.includes(term);card.hidden=!(categoryMatch&&searchMatch);if(!card.hidden)count++});const status=document.querySelector('[data-filter-status]');if(status)status.textContent=count+' result'+(count===1?'':'s');const searchStatus=document.querySelector('[data-search-status]');if(searchStatus)searchStatus.textContent=count+' destination'+(count===1?'':'s');const grid=document.querySelector('.catalog-grid');if(grid&&cards.length){let empty=grid.querySelector('.catalog-empty-state');if(!empty){empty=document.createElement('div');empty.className='empty-state catalog-empty-state';empty.setAttribute('role','status');empty.setAttribute('aria-live','polite');empty.textContent='No destinations match your search. Try another place or clear the filters.';grid.appendChild(empty)}empty.hidden=count!==0}};
- filterButtons.forEach(btn=>btn.addEventListener('click',()=>{selectedFilter=btn.dataset.filter||'all';filterButtons.forEach(b=>b.classList.toggle('active',b===btn));applyCatalogFilters()}));
- const searchForm=document.querySelector('#destination-search');if(searchForm)searchForm.addEventListener('submit',e=>{e.preventDefault();const term=(document.querySelector('#search-destination')?.value||'').trim(),style=document.querySelector('#search-style')?.value||'all',params=new URLSearchParams();if(term)params.set('q',term);if(style!=='all')params.set('style',style);const query=params.toString();window.location.href='destinations.html'+(query?'?'+query:'')+'#discover'});
- const destSearch=document.querySelector('#catalog-search');if(destSearch){destSearch.addEventListener('input',applyCatalogFilters);const params=new URLSearchParams(window.location.search),term=params.get('q')||'',style=params.get('style')||'all';if(term)destSearch.value=term;const styleButton=filterButtons.find(b=>b.dataset.filter===style);if(style!=='all'&&styleButton)styleButton.click();else applyCatalogFilters()}
+ const catalogGrid=document.querySelector('.catalog-grid');
+ const catalogSearch=document.querySelector('#catalog-search');
+ const filterButtons=[...document.querySelectorAll('[data-filter]')];
+ const catalogCards=catalogGrid?[...catalogGrid.querySelectorAll('.catalog-card[data-category]')]:[];
+ if(catalogSearch&&catalogGrid&&catalogCards.length){
+  const isExperiencePage=window.location.pathname.endsWith('/experiences.html');
+  const filterParam='style';
+  let selectedFilter='all';
+  let emptyState=catalogGrid.querySelector('.catalog-empty-state');
+  if(!emptyState){emptyState=document.createElement('div');emptyState.className='empty-state catalog-empty-state';emptyState.setAttribute('role','status');emptyState.setAttribute('aria-live','polite');emptyState.textContent=isExperiencePage?'No experiences match your search. Try another keyword or clear the filters.':'No destinations match your search. Try another place or clear the filters.';catalogGrid.appendChild(emptyState)}
+  const normalize=value=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();
+  const updateCatalogUrl=()=>{
+   const params=new URLSearchParams(window.location.search),term=catalogSearch.value.trim();
+   if(term)params.set('q',term);else params.delete('q');
+   if(selectedFilter!=='all')params.set(filterParam,selectedFilter);else params.delete(filterParam);
+   const query=params.toString(),next=window.location.pathname+(query?'?'+query:'')+(isExperiencePage?'':'#discover');
+   window.history.replaceState({},'',next);
+  };
+  const applyCatalogFilters=({syncUrl=true}={})=>{
+   const terms=normalize(catalogSearch.value).split(/\\s+/).filter(Boolean);let count=0;
+   catalogCards.forEach(card=>{
+    const categories=(card.dataset.category||'').split('|').map(x=>x.trim());
+    const categoryMatch=selectedFilter==='all'||categories.includes(selectedFilter);
+    const haystack=normalize([card.dataset.searchable,card.textContent,card.dataset.category].join(' '));
+    const searchMatch=terms.every(term=>haystack.includes(term));
+    card.hidden=!(categoryMatch&&searchMatch);if(!card.hidden)count++;
+   });
+   emptyState.hidden=count!==0;
+   const status=document.querySelector('[data-search-status]');
+   if(status)status.textContent=count+' '+(isExperiencePage?'experience':'destination')+(count===1?'':'s')+' found';
+   filterButtons.forEach(button=>{const active=(button.dataset.filter||'all')===selectedFilter;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
+   if(syncUrl)updateCatalogUrl();
+  };
+  const restoreCatalogState=()=>{
+   const params=new URLSearchParams(window.location.search),allowed=filterButtons.map(b=>b.dataset.filter||'all');
+   catalogSearch.value=params.get('q')||'';
+   const requested=params.get(filterParam)||'all';
+   selectedFilter=allowed.includes(requested)?requested:'all';
+   applyCatalogFilters({syncUrl:false});
+  };
+  catalogSearch.addEventListener('input',()=>applyCatalogFilters());
+  filterButtons.forEach(button=>button.addEventListener('click',()=>{selectedFilter=button.dataset.filter||'all';applyCatalogFilters()}));
+  document.querySelector('[data-catalog-reset]')?.addEventListener('click',()=>{
+   catalogSearch.value='';selectedFilter='all';applyCatalogFilters();
+   catalogSearch.focus();
+  });
+  window.addEventListener('popstate',restoreCatalogState);
+  restoreCatalogState();
+ }
  const newsletter=document.querySelector('#newsletter-form');if(newsletter)newsletter.addEventListener('submit',e=>{e.preventDefault();const msg=newsletter.querySelector('.form-message');if(msg)msg.textContent='Thanks for your interest! This demo does not submit or store your email.';newsletter.reset()});
  const tripForm=document.querySelector('#trip-form');if(tripForm)tripForm.addEventListener('submit',e=>{e.preventDefault();const data=new FormData(tripForm),name=data.get('trip-name')||'My next adventure',destination=data.get('trip-destination')||'Somewhere wonderful',days=data.get('trip-days')||'3',style=data.get('trip-style')||'A little of everything',budget=data.get('trip-budget')||'Flexible',notes=data.get('trip-notes')||'No notes added yet.';const preview=document.querySelector('#itinerary-preview');if(preview)preview.innerHTML='<p class="eyebrow light">YOUR TRIP SKETCH</p><h3>'+escapeHtml(name)+'</h3><p><b>Destination:</b> '+escapeHtml(destination)+'</p><p><b>Duration:</b> '+escapeHtml(days)+' days · <b>Style:</b> '+escapeHtml(style)+'</p><p><b>Budget:</b> '+escapeHtml(budget)+'</p><p><b>Your notes</b><br>'+escapeHtml(notes)+'</p><div class="callout">This is a planning sketch only. No bookings are made and no data is sent to a server.</div><button class="button button-light" id="download-trip" type="button">Download trip sketch ↓</button>';const download=document.querySelector('#download-trip');if(download)download.addEventListener('click',()=>{const text=name+'\nDestination: '+destination+'\nDuration: '+days+' days\nTravel style: '+style+'\nBudget: '+budget+'\nNotes: '+notes+'\n\nPlanning sketch only — no reservations made.';const blob=new Blob([text],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='wanderly-trip-sketch.txt';a.click();URL.revokeObjectURL(url)})});
- const industryCards=[...document.querySelectorAll('.industry-card')],industrySearch=document.querySelector('#industry-search'),industryButtons=[...document.querySelectorAll('[data-industry-filter]')];
- if(industryCards.length){let phase='all';const applyIndustry=()=>{const term=(industrySearch?.value||'').trim().toLowerCase();let count=0;industryCards.forEach(card=>{const matchTerm=(card.dataset.searchable||card.textContent).toLowerCase().includes(term);const matchPhase=phase==='all'||card.dataset.phase===phase;card.hidden=!(matchTerm&&matchPhase);if(!card.hidden)count++});const status=document.querySelector('#industry-count');if(status)status.textContent=count+' categor'+(count===1?'y':'ies')+' shown'};industrySearch?.addEventListener('input',applyIndustry);industryButtons.forEach(btn=>btn.addEventListener('click',()=>{phase=btn.dataset.industryFilter;industryButtons.forEach(b=>b.classList.toggle('active',b===btn));applyIndustry()}));applyIndustry()}
+ const industryGrid=document.querySelector('#industry-grid'),industryCards=industryGrid?[...industryGrid.querySelectorAll('.industry-card')]:[],industrySearch=document.querySelector('#industry-search'),industryButtons=[...document.querySelectorAll('[data-industry-filter]')];
+ if(industryGrid&&industrySearch&&industryCards.length){
+  let phase='all';
+  let empty=industryGrid.querySelector('.industry-empty-state');
+  if(!empty){empty=document.createElement('div');empty.className='empty-state industry-empty-state';empty.setAttribute('role','status');empty.setAttribute('aria-live','polite');empty.textContent='No categories match your search. Try another keyword or clear the filters.';industryGrid.appendChild(empty)}
+  const norm=value=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();
+  const applyIndustry=({syncUrl=true}={})=>{
+   const terms=norm(industrySearch.value).split(/\\s+/).filter(Boolean);let count=0;
+   industryCards.forEach(card=>{const haystack=norm([card.dataset.searchable,card.textContent].join(' '));const matches=terms.every(term=>haystack.includes(term))&&(phase==='all'||card.dataset.phase===phase);card.hidden=!matches;if(matches)count++});
+   empty.hidden=count!==0;const status=document.querySelector('#industry-count');if(status)status.textContent=count+' categor'+(count===1?'y':'ies')+' shown';
+   industryButtons.forEach(button=>{const active=(button.dataset.industryFilter||'all')===phase;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
+   if(syncUrl){const params=new URLSearchParams(location.search);if(industrySearch.value.trim())params.set('q',industrySearch.value.trim());else params.delete('q');if(phase!=='all')params.set('phase',phase);else params.delete('phase');const query=params.toString();history.replaceState({},'',location.pathname+(query?'?'+query:''))}
+  };
+  const restoreIndustry=()=>{const params=new URLSearchParams(location.search),valid=industryButtons.map(b=>b.dataset.industryFilter);industrySearch.value=params.get('q')||'';phase=valid.includes(params.get('phase'))?params.get('phase'):'all';applyIndustry({syncUrl:false})};
+  industrySearch.addEventListener('input',()=>applyIndustry());
+  industryButtons.forEach(button=>button.addEventListener('click',()=>{phase=button.dataset.industryFilter||'all';applyIndustry()}));
+  document.querySelector('[data-industry-reset]')?.addEventListener('click',()=>{industrySearch.value='';phase='all';applyIndustry();industrySearch.focus()});
+  window.addEventListener('popstate',restoreIndustry);restoreIndustry();
+ }
  const tripDestination=document.querySelector('[name="trip-destination"]');if(tripDestination){const queryDestination=new URLSearchParams(window.location.search).get('destination');if(queryDestination)tripDestination.value=queryDestination}
  const tripStyle=document.querySelector('[name="trip-style"]');if(tripStyle){const queryStyle=new URLSearchParams(window.location.search).get('style');if(queryStyle&&[...tripStyle.options].some(option=>option.value===queryStyle||option.textContent.trim()===queryStyle)){const matching=[...tripStyle.options].find(option=>option.value===queryStyle||option.textContent.trim()===queryStyle);tripStyle.value=matching.value;}}
  // Universal card/category details: every catalogue card can open an accessible, expanded detail view.
