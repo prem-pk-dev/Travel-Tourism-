@@ -107,5 +107,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   dialog.addEventListener('close',()=>{});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open)dialog.close()});
  }
+
+ // Keep remote image failures from leaving broken-image icons in cards or dialogs.
+ // The fallback is an inline decorative illustration; the original alt text remains available.
+ document.addEventListener('error',event=>{
+  const image=event.target;
+  if(!(image instanceof HTMLImageElement)||image.dataset.fallbackApplied)return;
+  image.dataset.fallbackApplied='true';
+  const fallbackSvg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8eddd"/><stop offset="1" stop-color="#b9cba5"/></linearGradient></defs><rect width="900" height="560" fill="url(#g)"/><circle cx="690" cy="150" r="58" fill="#d7ee83"/><path d="M0 430 220 220l145 145 150-190 385 255v130H0Z" fill="#78936d"/><path d="m0 485 245-155 160 105 170-120 325 175v70H0Z" fill="#284d3e"/><text x="450" y="525" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" letter-spacing="5" fill="#fffef9">WANDERLY</text></svg>';
+  image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(fallbackSvg);
+ },true);
+
  function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 });
