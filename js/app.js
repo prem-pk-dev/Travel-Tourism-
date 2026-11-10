@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   };
   function pIsEyebrow(text,eyebrow){return text===eyebrow;}
   detailCards.forEach(card=>{
-   if(card.classList.contains('destination-card')){card.addEventListener('click',event=>{event.preventDefault();openDetails(card)});card.setAttribute('aria-label','Open details: '+(card.querySelector('h3')?.textContent?.trim()||'destination'));return}
+   if(card.classList.contains('destination-card')){return}
    const trigger=document.createElement('button');trigger.type='button';trigger.className='card-detail-trigger';trigger.textContent=card.classList.contains('industry-card')?'Open category detail ↗':'View full details ↗';trigger.addEventListener('click',()=>{if(card.classList.contains('industry-card')&&card.dataset.detailSlug){window.location.href='industry-detail.html?category='+encodeURIComponent(card.dataset.detailSlug);return}openDetails(card)});
    const body=card.querySelector('.catalog-card-body')||card;
    if(!body.querySelector('.card-detail-trigger'))body.appendChild(trigger);
